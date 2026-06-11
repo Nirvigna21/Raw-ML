@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RawML — ML From Scratch</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #111111;
+    --bg2:      #1a1a1a;
+    --bg3:      #222222;
+    --border:   #2a2a2a;
+    --text:     #e8e8e8;
+    --muted:    #666666;
+    --dimmed:   #444444;
+    --radius:   10px;
+    --font:     'Inter', system-ui, sans-serif;
+    --mono:     'JetBrains Mono', 'Fira Code', monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Top nav ── */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 48px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .nav-logo {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  .nav-logo span { color: var(--accent); }
+  .nav-badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  /* ── Layout ── */
+  .layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ── */
+  aside {
+    width: 210px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 16px 12px;
+    gap: 2px;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+  .sidebar-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 4px 10px 10px;
+  }
+  .algo-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #999;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    transition: all 0.15s;
+    font-family: var(--font);
+  }
+  .algo-btn:hover { background: var(--bg2); color: var(--text); }
+  .algo-btn.active {
+    background: var(--bg2);
+    color: var(--text);
+    font-weight: 500;
+    border: 1px solid var(--border);
+  }
+  .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .sidebar-footer {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .run-all-btn {
+    width: 100%;
+    padding: 9px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--text);
+    font-family: var(--font);
+    transition: background 0.15s;
+  }
+  .run-all-btn:hover { background: var(--bg3); }
+
+  /* ── Main ── */
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .topbar {
+    padding: 14px 22px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .algo-title { font-size: 16px; font-weight: 600; }
+  .algo-tag {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .dataset-lbl { font-size: 12px; color: var(--muted); }
+
+  .content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Left panel ── */
+  .left-panel {
+    flex: 1;
+    padding: 18px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+  }
+
+  .section-lbl {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  /* code box */
+  .code-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: #cdd6f4;
+    line-height: 1.65;
+    white-space: pre;
+    overflow-x: auto;
+    position: relative;
+  }
+  .code-box .kw  { color: #cba6f7; }
+  .code-box .fn  { color: #89b4fa; }
+  .code-box .cm  { color: #585b70; }
+  .code-box .nm  { color: #f38ba8; }
+  .code-box .st  { color: #a6e3a1; }
+
+  /* vs rows */
+  .vs-table { display: flex; flex-direction: column; gap: 0; }
+  .vs-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .vs-row:last-child { border: none; }
+  .vs-label { width: 80px; color: var(--muted); }
+  .vs-bars  { flex: 1; display: flex; gap: 3px; align-items: center; }
+  .vs-bar   { height: 6px; border-radius: 3px; transition: width 0.4s ease; }
+  .vs-num   { width: 120px; text-align: right; color: var(--text); font-weight: 500; font-size: 11px; }
+
+  /* metric cards */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .metric-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+  }
+  .metric-lbl { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+  .metric-val { font-size: 20px; font-weight: 600; color: var(--text); }
+  .metric-sub { font-size: 10px; color: var(--dimmed); margin-top: 2px; }
+
+  /* ── Right panel ── */
+  .right-panel {
+    width: 230px;
+    padding: 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+
+  .param-block { display: flex; flex-direction: column; gap: 10px; }
+  .param-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .param-lbl { font-size: 12px; color: #999; }
+  .param-val { font-size: 12px; font-weight: 600; color: var(--text); }
+
+  input[type=range] {
+    width: 100%;
+    accent-color: var(--accent);
+    height: 4px;
+  }
+
+  .canvas-wrap {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px;
+  }
+  canvas { display: block; }
+
+  .action-btns { display: flex; flex-direction: column; gap: 6px; margin-top: auto; }
+  .action-btn {
+    width: 100%;
+    padding: 9px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--text);
+    font-family: var(--font);
+    transition: background 0.15s;
+    text-align: center;
+  }
+  .action-btn:hover { background: var(--bg3); }
+  .action-btn.primary {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Raw<span id="nav-accent">ML</span></div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span class="nav-badge">NumPy Only · No sklearn for training</span>
+    <a href="https://github.com" target="_blank" style="font-size:12px;color:var(--muted);text-decoration:none">GitHub ↗</a>
+  </div>
+</nav>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside>
+    <div class="sidebar-label">Algorithms</div>
+    <button class="algo-btn active" onclick="switchAlgo(0)">
+      <span class="dot" style="background:#378ADD"></span>Linear Regression
+    </button>
+    <button class="algo-btn" onclick="switchAlgo(1)">
+      <span class="dot" style="background:#1D9E75"></span>Logistic Regression
+    </button>
+    <button class="algo-btn" onclick="switchAlgo(2)">
+      <span class="dot" style="background:#BA7517"></span>Decision Tree
+    </button>
+    <button class="algo-btn" onclick="switchAlgo(3)">
+      <span class="dot" style="background:#D4537E"></span>k-Means
+    </button>
+    <button class="algo-btn" onclick="switchAlgo(4)">
+      <span class="dot" style="background:#7F77DD"></span>SVM
+    </button>
+    <button class="algo-btn" onclick="switchAlgo(5)">
+      <span class="dot" style="background:#888780"></span>Naive Bayes
+    </button>
+    <div class="sidebar-footer">
+      <button class="run-all-btn" onclick="runBenchmark()">▶ Run Benchmark</button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main>
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="algo-title" id="algo-title">Linear Regression</span>
+        <span class="algo-tag" id="algo-tag">Supervised · Regression</span>
+      </div>
+      <span class="dataset-lbl" id="dataset-lbl">Dataset: Diabetes</span>
+    </div>
+
+    <div class="content">
+
+      <!-- Left panel -->
+      <div class="left-panel">
+
+        <div>
+          <div class="section-lbl">Core Snippet</div>
+          <div class="code-box" id="code-box"></div>
+        </div>
+
+        <div>
+          <div class="section-lbl">Ours vs Sklearn</div>
+          <div class="vs-table" id="vs-table"></div>
+        </div>
+
+        <div>
+          <div class="section-lbl">Metrics</div>
+          <div class="metrics-grid" id="metrics-grid"></div>
+        </div>
+
+      </div>
+
+      <!-- Right panel -->
+      <div class="right-panel">
+
+        <div>
+          <div class="section-lbl">Parameters</div>
+          <div class="param-block" id="param-block"></div>
+        </div>
+
+        <div>
+          <div class="section-lbl">Loss Curve</div>
+          <div class="canvas-wrap">
+            <canvas id="loss-canvas" width="196" height="100"></canvas>
+          </div>
+        </div>
+
+        <div class="action-btns">
+          <button class="action-btn primary" onclick="runBenchmark()">▶ Run & Benchmark</button>
+          <button class="action-btn" onclick="openGithub()">View on GitHub ↗</button>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── Algorithm data ────────────────────────────────────────────────────────────
+const ALGOS = [
+  {
+    name: "Linear Regression",
+    tag: "Supervised · Regression",
+    color: "#378ADD",
+    lightColor: "#2a4a6e",
+    dataset: "Dataset: Diabetes",
+    code: `<span class="kw">def</span> <span class="fn">fit</span>(self, X, y):
+    self.weights = np.zeros(X.shape[<span class="nm">1</span>])
+    self.bias = <span class="nm">0.0</span>
+    <span class="kw">for</span> _ <span class="kw">in</span> range(self.n_iters):
+        y_pred = X @ self.weights + self.bias
+        <span class="cm"># MSE gradients</span>
+        dw = (<span class="nm">2</span>/m) * X.T @ (y_pred - y)
+        db = (<span class="nm">2</span>/m) * np.sum(y_pred - y)
+        self.weights -= self.lr * dw
+        self.bias    -= self.lr * db`,
+    vs: [
+      { label: "R² Score", ours: 60, sk: 58, text: "0.4545 / 0.4526" },
+      { label: "Train time", ours: 22, sk: 4,  text: "0.021s / 0.004s" },
+      { label: "MSE",        ours: 38, sk: 40, text: "3021 / 2989" },
+    ],
+    metrics: [
+      ["R² Score", "0.455", "ours"],
+      ["Iterations", "1000", "converged"],
+      ["Learning rate", "0.05", "tuned"],
+      ["MSE", "3021", "test set"],
+    ],
+    params: [
+      { label: "Learning rate", min: 0.001, max: 0.5,  val: 0.05,  step: 0.001, fmt: v => v.toFixed(3) },
+      { label: "Iterations",    min: 100,   max: 3000, val: 1000,  step: 100,   fmt: v => Math.round(v) },
+      { label: "Train split",   min: 60,    max: 90,   val: 80,    step: 5,     fmt: v => Math.round(v)+"%" },
+    ],
+  },
+  {
+    name: "Logistic Regression",
+    tag: "Supervised · Classification",
+    color: "#1D9E75",
+    lightColor: "#1a4a38",
+    dataset: "Dataset: Breast Cancer",
+    code: `<span class="kw">def</span> <span class="fn">_sigmoid</span>(self, z):
+    <span class="kw">return</span> <span class="nm">1</span> / (<span class="nm">1</span> + np.exp(-np.clip(z, <span class="nm">-500</span>, <span class="nm">500</span>)))
+
+<span class="kw">def</span> <span class="fn">fit</span>(self, X, y):
+    <span class="kw">for</span> _ <span class="kw">in</span> range(self.n_iters):
+        z      = X @ self.weights + self.bias
+        y_pred = self._sigmoid(z)  <span class="cm"># sigmoid activation</span>
+        dw = (<span class="nm">1</span>/m) * X.T @ (y_pred - y)
+        db = (<span class="nm">1</span>/m) * np.sum(y_pred - y)
+        self.weights -= self.lr * dw`,
+    vs: [
+      { label: "Accuracy",   ours: 62, sk: 60, text: "99.1% / 97.4%" },
+      { label: "Train time", ours: 30, sk: 3,  text: "0.061s / 0.005s" },
+      { label: "F1 Score",   ours: 60, sk: 58, text: "0.991 / 0.974" },
+    ],
+    metrics: [
+      ["Accuracy", "99.1%", "ours"],
+      ["Iterations", "1000", "converged"],
+      ["Threshold", "0.50", "default"],
+      ["F1 Score", "0.991", "test set"],
+    ],
+    params: [
+      { label: "Learning rate", min: 0.001, max: 0.5,  val: 0.01,  step: 0.001, fmt: v => v.toFixed(3) },
+      { label: "Iterations",    min: 100,   max: 3000, val: 1000,  step: 100,   fmt: v => Math.round(v) },
+      { label: "Threshold",     min: 0.1,   max: 0.9,  val: 0.5,   step: 0.05,  fmt: v => v.toFixed(2) },
+    ],
+  },
+  {
+    name: "Decision Tree",
+    tag: "Supervised · Classification",
+    color: "#BA7517",
+    lightColor: "#4a3010",
+    dataset: "Dataset: Iris",
+    code: `<span class="kw">def</span> <span class="fn">_info_gain</span>(self, y, X_col, thresh):
+    parent = self._impurity(y)
+    left  = y[X_col <= thresh]
+    right = y[X_col >  thresh]
+    <span class="cm"># weighted child impurity</span>
+    child = (len(left)/len(y))  * self._impurity(left) \
+          + (len(right)/len(y)) * self._impurity(right)
+    <span class="kw">return</span> parent - child  <span class="cm"># information gain</span>`,
+    vs: [
+      { label: "Accuracy",   ours: 64, sk: 64, text: "100% / 100%" },
+      { label: "Train time", ours: 14, sk: 3,  text: "0.013s / 0.002s" },
+      { label: "Max depth",  ours: 40, sk: 40, text: "4 / 4" },
+    ],
+    metrics: [
+      ["Accuracy", "100%", "ours"],
+      ["Max depth", "4", "set"],
+      ["Criterion", "Gini", "split"],
+      ["Features", "4", "iris"],
+    ],
+    params: [
+      { label: "Max depth",    min: 1,  max: 15, val: 4,   step: 1,  fmt: v => Math.round(v) },
+      { label: "Min samples",  min: 2,  max: 20, val: 2,   step: 1,  fmt: v => Math.round(v) },
+      { label: "Train split",  min: 60, max: 90, val: 80,  step: 5,  fmt: v => Math.round(v)+"%" },
+    ],
+  },
+  {
+    name: "k-Means",
+    tag: "Unsupervised · Clustering",
+    color: "#D4537E",
+    lightColor: "#4a1a2a",
+    dataset: "Dataset: Digits",
+    code: `<span class="kw">def</span> <span class="fn">fit</span>(self, X):
+    self.centers = self._init_centers(X)  <span class="cm"># k-means++</span>
+    <span class="kw">for</span> _ <span class="kw">in</span> range(self.max_iters):
+        labels  = self._assign(X)   <span class="cm"># E-step</span>
+        new_c   = np.array([        <span class="cm"># M-step</span>
+            X[labels==k].mean(<span class="nm">0</span>)
+            <span class="kw">for</span> k <span class="kw">in</span> range(self.k)])
+        <span class="kw">if</span> np.allclose(new_c, self.centers): <span class="kw">break</span>
+        self.centers = new_c`,
+    vs: [
+      { label: "Inertia ↓",   ours: 58, sk: 60, text: "69756 / 69845" },
+      { label: "Train time",  ours: 50, sk: 5,  text: "0.479s / 0.041s" },
+      { label: "Silhouette",  ours: 44, sk: 44, text: "~0.18 / ~0.18" },
+    ],
+    metrics: [
+      ["k clusters", "10", "digits"],
+      ["Inertia", "69756", "ours wins"],
+      ["Init", "k-means++", "method"],
+      ["Iters", "~40", "converged"],
+    ],
+    params: [
+      { label: "k clusters",  min: 2,  max: 20,  val: 10,  step: 1,   fmt: v => Math.round(v) },
+      { label: "Max iters",   min: 10, max: 500, val: 100, step: 10,  fmt: v => Math.round(v) },
+      { label: "Train split", min: 60, max: 90,  val: 80,  step: 5,   fmt: v => Math.round(v)+"%" },
+    ],
+  },
+  {
+    name: "SVM",
+    tag: "Supervised · Classification",
+    color: "#7F77DD",
+    lightColor: "#2a2560",
+    dataset: "Dataset: Digits (0 vs 1)",
+    code: `<span class="kw">for</span> idx, x_i <span class="kw">in</span> enumerate(X):
+    cond = y_[idx] * (x_i @ self.w - self.b) >= <span class="nm">1</span>
+    <span class="kw">if</span> cond:    <span class="cm"># correct side of margin</span>
+        self.w -= lr * (<span class="nm">2</span> * lam * self.w)
+    <span class="kw">else</span>:       <span class="cm"># inside margin / misclassified</span>
+        self.w -= lr * (<span class="nm">2</span>*lam*self.w - x_i*y_[idx])
+        self.b -= lr * y_[idx]
+    <span class="cm"># hinge loss: max(0, 1 - y*(w·x - b))</span>`,
+    vs: [
+      { label: "Accuracy",   ours: 64, sk: 64, text: "100% / 100%" },
+      { label: "Train time", ours: 50, sk: 3,  text: "0.505s / 0.003s" },
+      { label: "Solver",     ours: 40, sk: 60, text: "SGD / QP(libsvm)" },
+    ],
+    metrics: [
+      ["Accuracy", "100%", "SGD-SVM"],
+      ["λ (reg)", "0.01", "default"],
+      ["Kernel", "linear", "ours"],
+      ["Iters", "500", "SGD"],
+    ],
+    params: [
+      { label: "Learning rate", min: 0.0001, max: 0.01,  val: 0.001, step: 0.0001, fmt: v => v.toFixed(4) },
+      { label: "Lambda (reg)",  min: 0.001,  max: 0.1,   val: 0.01,  step: 0.001,  fmt: v => v.toFixed(3) },
+      { label: "Iterations",    min: 100,    max: 1000,  val: 500,   step: 50,     fmt: v => Math.round(v) },
+    ],
+  },
+  {
+    name: "Naive Bayes",
+    tag: "Supervised · Classification",
+    color: "#888780",
+    lightColor: "#2e2e2c",
+    dataset: "Dataset: Wine",
+    code: `<span class="kw">def</span> <span class="fn">fit</span>(self, X, y):
+    <span class="kw">for</span> c <span class="kw">in</span> self.classes:
+        X_c            = X[y == c]
+        self.mean[c]   = X_c.mean(axis=<span class="nm">0</span>)
+        self.var[c]    = X_c.var(axis=<span class="nm">0</span>) + <span class="nm">1e-9</span>  <span class="cm"># smoothing</span>
+        self.priors[c] = len(X_c) / len(y)   <span class="cm"># MLE prior</span>
+
+<span class="kw">def</span> <span class="fn">_log_likelihood</span>(self, x, mean, var):
+    <span class="kw">return</span> -<span class="nm">0.5</span> * np.sum(np.log(<span class="nm">2</span>*np.pi*var) + (x-mean)**<span class="nm">2</span>/var)`,
+    vs: [
+      { label: "Accuracy",   ours: 64, sk: 64, text: "100% / 100%" },
+      { label: "Train time", ours: 2,  sk: 1,  text: "0.0002s / 0.001s" },
+      { label: "Classes",    ours: 44, sk: 44, text: "3 / 3" },
+    ],
+    metrics: [
+      ["Accuracy", "100%", "ours"],
+      ["Classes", "3", "wine"],
+      ["Train time", "0.0002s", "fastest"],
+      ["Method", "MLE", "Gaussian"],
+    ],
+    params: [
+      { label: "Var smoothing", min: 1e-9, max: 1e-6, val: 1e-9, step: 1e-10, fmt: v => v.toExponential(0) },
+      { label: "Train split",   min: 60,   max: 90,   val: 80,   step: 5,     fmt: v => Math.round(v)+"%" },
+    ],
+  },
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let current = 0;
+
+// ── Switch algo ───────────────────────────────────────────────────────────────
+function switchAlgo(idx) {
+  current = idx;
+  const a = ALGOS[idx];
+
+  // sidebar active
+  document.querySelectorAll('.algo-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+
+  // update accent color
+  document.documentElement.style.setProperty('--accent', a.color);
+
+  // topbar
+  document.getElementById('algo-title').textContent = a.name;
+  const tag = document.getElementById('algo-tag');
+  tag.textContent = a.tag;
+  tag.style.background = a.lightColor;
+  tag.style.color = a.color;
+  document.getElementById('dataset-lbl').textContent = a.dataset;
+
+  // code
+  document.getElementById('code-box').innerHTML = a.code;
+
+  // vs table
+  const vt = document.getElementById('vs-table');
+  vt.innerHTML = a.vs.map((v, i) => `
+    <div class="vs-row">
+      <span class="vs-label">${v.label}</span>
+      <div class="vs-bars">
+        <div class="vs-bar" style="width:${v.ours}px;background:${a.color}"></div>
+        <div class="vs-bar" style="width:${v.sk}px;background:${a.lightColor};border:1px solid ${a.color}33"></div>
+      </div>
+      <span class="vs-num">${v.text}</span>
+    </div>`).join('');
+
+  // metrics
+  const mg = document.getElementById('metrics-grid');
+  mg.innerHTML = a.metrics.map(([l, v, s]) => `
+    <div class="metric-card">
+      <div class="metric-lbl">${l}</div>
+      <div class="metric-val" style="color:${a.color}">${v}</div>
+      <div class="metric-sub">${s}</div>
+    </div>`).join('');
+
+  // params
+  const pb = document.getElementById('param-block');
+  pb.innerHTML = a.params.map((p, i) => `
+    <div>
+      <div class="param-row">
+        <span class="param-lbl">${p.label}</span>
+        <span class="param-val" id="pval-${idx}-${i}">${p.fmt(p.val)}</span>
+      </div>
+      <input type="range" min="${p.min}" max="${p.max}" value="${p.val}" step="${p.step}"
+        oninput="document.getElementById('pval-${idx}-${i}').textContent = ALGOS[${idx}].params[${i}].fmt(+this.value)">
+    </div>`).join('');
+
+  // loss curve
+  drawLoss(a.color);
+}
+
+// ── Loss curve ────────────────────────────────────────────────────────────────
+function drawLoss(color) {
+  const canvas = document.getElementById('loss-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // grid
+  ctx.strokeStyle = '#2a2a2a';
+  ctx.lineWidth = 0.5;
+  [0.25, 0.5, 0.75].forEach(f => {
+    ctx.beginPath(); ctx.moveTo(0, H * f); ctx.lineTo(W, H * f); ctx.stroke();
+  });
+
+  // curve
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 4;
+  ctx.beginPath();
+  for (let x = 0; x < W; x++) {
+    const t = x / W;
+    const y = H - (H * 0.85) * (1 - Math.exp(-t * 5)) - H * 0.05;
+    x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // labels
+  ctx.fillStyle = '#444';
+  ctx.font = '9px Inter, system-ui';
+  ctx.fillText('loss', 4, 12);
+  ctx.fillText('0', 4, H - 4);
+  ctx.fillText('epochs →', W - 56, H - 4);
+}
+
+// ── Benchmark (simulated — real runs in Python) ───────────────────────────────
+function runBenchmark() {
+  const a = ALGOS[current];
+  // animate the loss curve redrawn
+  let frame = 0;
+  const total = 40;
+  const interval = setInterval(() => {
+    const canvas = document.getElementById('loss-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    ctx.strokeStyle = '#2a2a2a';
+    ctx.lineWidth = 0.5;
+    [0.25, 0.5, 0.75].forEach(f => {
+      ctx.beginPath(); ctx.moveTo(0, H * f); ctx.lineTo(W, H * f); ctx.stroke();
+    });
+
+    const progress = frame / total;
+    ctx.strokeStyle = a.color;
+    ctx.lineWidth = 2;
+    ctx.shadowColor = a.color;
+    ctx.shadowBlur = 4;
+    ctx.beginPath();
+    for (let x = 0; x < W * progress; x++) {
+      const t = x / W;
+      const y = H - (H * 0.85) * (1 - Math.exp(-t * 5)) - H * 0.05;
+      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = '#444';
+    ctx.font = '9px Inter, system-ui';
+    ctx.fillText('loss', 4, 12);
+    ctx.fillText(`${Math.round(progress * 100)}%`, W / 2 - 10, H / 2);
+
+    frame++;
+    if (frame > total) {
+      clearInterval(interval);
+      drawLoss(a.color);
+    }
+  }, 30);
+}
+
+function openGithub() {
+  window.open('https://github.com', '_blank');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.documentElement.style.setProperty('--accent', ALGOS[0].color);
+switchAlgo(0);
+</script>
+</body>
+</html>

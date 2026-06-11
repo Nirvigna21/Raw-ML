@@ -1,0 +1,7 @@
+Algorithm,Dataset,Ours_Score,SK_Score,Metric,Ours_Time,SK_Time
+Linear Regression,Diabetes,0.4545,0.4526,R²,15.2853,12.3592
+Logistic Regression,Breast Cancer,0.9912,0.9737,Accuracy,1.3836,8.9664
+Decision Tree,Iris,1.0,1.0,Accuracy,0.0947,1.5703
+k-Means,Digits,69548.7,69845.8,Inertia (lower=better),2.6531,68.4629
+SVM,Digits (0 vs 1),1.0,1.0,Accuracy,1.0754,0.8701
+Naive Bayes,Wine,1.0,1.0,Accuracy,0.0,0.0
