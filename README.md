@@ -106,11 +106,5 @@ Used **log-probabilities** to prevent numerical underflow during likelihood comp
 
 ---
 
-## Deploy
-
-Live demo: [Streamlit Cloud link]
-
----
-
 ## License
 MIT
